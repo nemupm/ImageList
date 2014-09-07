@@ -9,7 +9,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.Toast;
 
@@ -22,11 +21,13 @@ public class ListActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_list);
+        // attatch fragment
+        /*
         if (savedInstanceState == null) {
             getFragmentManager().beginTransaction()
                     .add(R.id.container, new PlaceholderFragment())
                     .commit();
-        }
+        }*/
         final ListActivity mActivity = this;
 
         // make data in list_view
@@ -36,7 +37,7 @@ public class ListActivity extends Activity {
         }
         ListView listView = (ListView)findViewById(R.id.listView);
         // make adapter
-        ArrayAdapter<String> adapter = new ArrayAdapter<String>(mActivity,android.R.layout.simple_list_item_1,list);
+        CustomListItemAdapter adapter = new CustomListItemAdapter(mActivity,list);
         listView.setAdapter(adapter);
         // when tapping
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
