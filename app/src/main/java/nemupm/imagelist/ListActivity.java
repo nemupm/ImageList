@@ -1,7 +1,6 @@
 package nemupm.imagelist;
 
 import android.app.Activity;
-import android.app.ActionBar;
 import android.app.Fragment;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -9,8 +8,12 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.os.Build;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.ListView;
+import android.widget.Toast;
 
+import java.util.ArrayList;
 
 
 public class ListActivity extends Activity {
@@ -24,6 +27,25 @@ public class ListActivity extends Activity {
                     .add(R.id.container, new PlaceholderFragment())
                     .commit();
         }
+        final ListActivity mActivity = this;
+
+        // make data in list_view
+        ArrayList<String> list = new ArrayList<String>();
+        for(int i = 0; i < 20; i++){
+            list.add("hoge"+i);
+        }
+        ListView listView = (ListView)findViewById(R.id.listView);
+        // make adapter
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(mActivity,android.R.layout.simple_list_item_1,list);
+        listView.setAdapter(adapter);
+        // when tapping
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                String str = (String) parent.getItemAtPosition(position);
+                Toast.makeText(mActivity, str, Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
 
