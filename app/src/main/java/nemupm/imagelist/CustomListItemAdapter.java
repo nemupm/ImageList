@@ -5,6 +5,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import java.util.List;
@@ -12,10 +13,10 @@ import java.util.List;
 /**
  * Created by Kiko on 2014/09/07.
  */
-public class CustomListItemAdapter extends ArrayAdapter<String>{
+public class CustomListItemAdapter extends ArrayAdapter<BitmapAndString>{
     private LayoutInflater mLayoutInflater;
 
-    public CustomListItemAdapter(Context context, List<String> objects){
+    public CustomListItemAdapter(Context context, List<BitmapAndString> objects){
         super(context, 0, objects);
         mLayoutInflater = (LayoutInflater) context.getSystemService(context.LAYOUT_INFLATER_SERVICE);
     }
@@ -30,10 +31,12 @@ public class CustomListItemAdapter extends ArrayAdapter<String>{
             view = convertView;
         }
 
-        String item = getItem(position);
+        BitmapAndString item = getItem(position);
 
+        ImageView image = (ImageView) view.findViewById(R.id.imageView);
         TextView text = (TextView) view.findViewById(R.id.textView);
-        text.setText("Title:"+item);
+        image.setImageBitmap(item.getImage());
+        text.setText("Description:"+item.getDescription());
 
         return view;
     }
