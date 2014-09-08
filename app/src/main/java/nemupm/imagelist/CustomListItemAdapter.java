@@ -13,10 +13,10 @@ import java.util.List;
 /**
  * Created by Kiko on 2014/09/07.
  */
-public class CustomListItemAdapter extends ArrayAdapter<BitmapAndString>{
+public class CustomListItemAdapter extends ArrayAdapter<BitmapAndDescription>{
     private LayoutInflater mLayoutInflater;
 
-    public CustomListItemAdapter(Context context, List<BitmapAndString> objects){
+    public CustomListItemAdapter(Context context, List<BitmapAndDescription> objects){
         super(context, 0, objects);
         mLayoutInflater = (LayoutInflater) context.getSystemService(context.LAYOUT_INFLATER_SERVICE);
     }
@@ -31,11 +31,11 @@ public class CustomListItemAdapter extends ArrayAdapter<BitmapAndString>{
             view = convertView;
         }
 
-        BitmapAndString item = getItem(position);
+        BitmapAndDescription item = getItem(position);
 
         ImageView image = (ImageView) view.findViewById(R.id.imageView);
         TextView text = (TextView) view.findViewById(R.id.textView);
-        image.setImageBitmap(item.getImage());
+        image.setImageBitmap(item.getBitmap());
         text.setText("Description:"+item.getDescription());
 
         return view;

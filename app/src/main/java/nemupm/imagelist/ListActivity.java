@@ -1,29 +1,37 @@
 package nemupm.imagelist;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.Fragment;
-import android.content.ContentResolver;
-import android.database.Cursor;
+import android.content.DialogInterface;
+import android.content.Intent;
 import android.graphics.Bitmap;
-import android.net.Uri;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
-import android.provider.MediaStore;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
+import android.widget.EditText;
 import android.widget.ListView;
-import android.widget.Toast;
 
+import java.io.InputStream;
 import java.util.ArrayList;
 
 
-public class ListActivity extends Activity {
+public class ListActivity extends Activity{
+    private BitmapAndDescriptionModel bdModel = null;
+    private CustomListItemAdapter adapter;
+    private static final int REQUEST_GALLERY = 0;
+;
+    private Bitmap imageToRegister = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        Log.d("logcat","onCreate");
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_list);
         // attatch fragment
@@ -35,24 +43,15 @@ public class ListActivity extends Activity {
         }*/
         final ListActivity mActivity = this;
 
-        /// get image's path
-        //Uri uri = MediaStore.Images.Media.INTERNAL_CONTENT_URI; // internal
-        Uri uri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI; // SD card
-        Cursor cursor = getContentResolver().query(uri, null, null, null, null);
-        ContentResolver cr = getContentResolver();
-        ArrayList<BitmapAndString> lstBs = new ArrayList<BitmapAndString>();
-        cursor.moveToFirst();
-        for (int i = 0; i < cursor.getCount(); i++){
-            long id = cursor.getLong(cursor.getColumnIndexOrThrow("_id"));
-            Bitmap bmp = MediaStore.Images.Thumbnails.getThumbnail(cr, id, MediaStore.Images.Thumbnails.MICRO_KIND, null);
-            String str = "hogehoge" + Integer.toString(i);
-            BitmapAndString bs = new BitmapAndString();
-            bs.setImage(bmp);
-            bs.setDescription(str);
-            lstBs.add(bs);
-            cursor.moveToNext();
-        }
-        // make data in list_view
+        // make data for list_view
+        // read bitmap and description
+        bdModel = new BitmapAndDescriptionModel(mActivity);
+        ArrayList lstBd = bdModel.getBitmapAndDescription();
+        ListView listView = (ListView)findViewById(R.id.listView);
+        // make adapter
+        adapter = new CustomListItemAdapter(mActivity,lstBd);
+        listView.setAdapter(adapter);
+
         /*
         /// get image's size
         String path = "sample.png";
@@ -65,65 +64,20 @@ public class ListActivity extends Activity {
         options.inJustDecodeBounds = false;
         Bitmap bmp = BitmapFactory.decodeFile(path, options);
         */
-        ListView listView = (ListView)findViewById(R.id.listView);
-        // make adapter
-        CustomListItemAdapter adapter = new CustomListItemAdapter(mActivity,lstBs);
-        listView.setAdapter(adapter);
+
         // when tapping
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                String str = (String) parent.getItemAtPosition(position);
-                Toast.makeText(mActivity, str, Toast.LENGTH_SHORT).show();
+                // call DetailActivity
+                BitmapAndDescription bd = (BitmapAndDescription)parent.getItemAtPosition(position);
+                Intent intent = new Intent(ListActivity.this, DetailActivity.class);
+                intent.putExtra("bitmap",bd.getBitmap());
+                intent.putExtra("description",bd.getDescription());
+                startActivity(intent);
             }
         });
     }
-/*
-    // get photo's path
-    private void setPhoto() {
-        String[] str_items = {getString(R.string.pick_message02), getString(R.string.pick_message03)};
-        new AlertDialog.Builder(this)
-                .setIcon(android.R.drawable.ic_menu_more)
-                .setTitle(getString(R.string.pick_message01))
-                .setItems(str_items, new DialogInterface.OnClickListener(){
-                    public void onClick(DialogInterface dialog, int which) {
-                        if (which==0) {
-                            //ギャラリーの起動
-                            Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
-                            intent.setType("image/*");
-                            startActivityForResult(Intent.createChooser(intent, "Select picture"), 999);
-                        } else {
-                            //カメラの起動
-                            //大きい画像の取得用
-                            String filename = "CIGAR"+System.currentTimeMillis()+".jpg";
-
-                            ContentValues values = new ContentValues();
-                            values.put(MediaStore.Images.Media.TITLE, filename);
-                            values.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg");
-                            currentData.photo = getContentResolver().insert(
-                                    MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
-
-                            Intent intent = new Intent();
-                            intent.setAction(MediaStore.ACTION_IMAGE_CAPTURE);
-                            intent.putExtra(MediaStore.EXTRA_OUTPUT, currentData.photo);
-                            startActivityForResult(intent, 999);
-                        }
-                    }
-                })
-                .show();
-    }
-
-    //写真選択インテント呼び出しからの戻り
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == 999) {
-            if (resultCode == RESULT_OK) {
-                //画像のセット
-                ivPhoto.setImageURI(data.getData());
-            }
-        }
-    }
-*/
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -137,11 +91,15 @@ public class ListActivity extends Activity {
         // Handle action bar item clicks here. The action bar will
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-        if (id == R.id.action_settings) {
-            return true;
+        switch (item.getItemId()){
+            case R.id.action_new:
+                registerBitmapAndDescription();
+                return true;
+            case R.id.action_settings:
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
         }
-        return super.onOptionsItemSelected(item);
     }
 
     /**
@@ -157,6 +115,58 @@ public class ListActivity extends Activity {
                 Bundle savedInstanceState) {
             View rootView = inflater.inflate(R.layout.fragment_list, container, false);
             return rootView;
+        }
+    }
+
+    /**
+     * register bitmap and description
+     */
+    public void registerBitmapAndDescription(){
+        // call gallery
+        Intent intent = new Intent();
+        intent.setType("image/*");
+        intent.setAction(Intent.ACTION_GET_CONTENT);
+        startActivityForResult(intent, REQUEST_GALLERY);
+
+        // input description dialog
+        LayoutInflater inflater
+                = LayoutInflater.from(this);
+        View view = inflater.inflate(R.layout.input_description_dialog,null);
+        final EditText editText
+                = (EditText)view.findViewById(R.id.editText);
+
+        new AlertDialog.Builder(this)
+                .setTitle("Please input image's description")
+                .setIcon(R.drawable.ic_launcher)
+                .setView(view)
+                .setPositiveButton(
+                        "Register",
+                        new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialogInterface, int i) {
+                                BitmapAndDescription bd = new BitmapAndDescription();
+                                bd.setBitmap(imageToRegister);
+                                bd.setDescription(editText.getText().toString());
+                                bdModel.insertBitmapAndDescription(
+                                        bd.getBitmap(),bd.getDescription());
+                                // reflesh
+                                adapter.add(bd);
+                                adapter.notifyDataSetChanged();
+                            }
+                        }
+                ).show();
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data){
+        if(requestCode == REQUEST_GALLERY && resultCode == RESULT_OK) {
+            try {
+                InputStream in = getContentResolver().openInputStream(data.getData());
+                imageToRegister = BitmapFactory.decodeStream(in);
+                in.close();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 }
